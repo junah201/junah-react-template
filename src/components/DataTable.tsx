@@ -60,7 +60,7 @@ export function DataTable<TData, TValue>({
   defaultSize = 10,
   filters = [],
 }: DataTableProps<TData, TValue>) {
-  const { control, handleSubmit } = useCustomForm();
+  const { control, handleSubmit, reset } = useCustomForm();
   const [filter, setFilter] = useState({});
   const [data, setData] = useState<TData[]>([]);
   const [pagination, setPagination] = useState<PaginationState>({
@@ -131,6 +131,7 @@ export function DataTable<TData, TValue>({
               variant="secondary"
               onClick={() => {
                 setFilter({});
+                reset();
               }}
               className="flex-grow-[1]"
             >
