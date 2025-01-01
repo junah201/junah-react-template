@@ -6,6 +6,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   PaginationState,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { Table as ReactTable } from "@tanstack/react-table";
@@ -15,6 +16,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ArrowDown10,
+  ArrowDown01,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,7 +50,7 @@ interface DataTableProps<TData, TValue> {
   queryFn: (
     page: number,
     size: number,
-    filter?: any
+    params?: any
   ) => Promise<AxiosResponse<Datas<TData>, any>>;
   defaultSize?: number;
   filters?: (FormInputType | null)[];
@@ -63,6 +66,12 @@ export function DataTable<TData, TValue>({
   const { control, handleSubmit, reset } = useCustomForm();
   const [filter, setFilter] = useState({});
   const [data, setData] = useState<TData[]>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    {
+      id: "created_at",
+      desc: true,
+    },
+  ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: defaultSize,
@@ -77,19 +86,23 @@ export function DataTable<TData, TValue>({
         ...filter,
         page: pagination.pageIndex,
         size: pagination.pageSize,
+        sort: sorting
+          .map((sort) => `${sort.id} ${sort.desc ? "desc" : "asc"}`)
+          .join(","),
       },
     ],
     () =>
-      queryFn(
-        pagination.pageIndex * pagination.pageSize,
-        pagination.pageSize,
-        filter
-      ),
+      queryFn(pagination.pageIndex * pagination.pageSize, pagination.pageSize, {
+        ...filter,
+        sort: sorting
+          .map((sort) => `${sort.id} ${sort.desc ? "desc" : "asc"}`)
+          .join(","),
+      }),
     {
       keepPreviousData: true,
-      onSuccess: (data) => {
-        setTotalRows(data.count);
-        setData(data.data);
+      onSuccess: (res) => {
+        setTotalRows(res.count);
+        setData(res.data);
       },
     }
   );
@@ -102,13 +115,16 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
     state: {
       pagination,
+      sorting,
     },
     rowCount: totalRows,
     pageCount: totalPages,
     manualPagination: true,
     manualFiltering: true,
+    manualSorting: true,
     autoResetPageIndex: false, // turn off page index reset when sorting or filtering
   });
 
@@ -147,13 +163,25 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className="text-xs md:text-base"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
+                      {header.column.getCanSort() &&
+                      !header.column.getIsSorted()
+                        ? null
+                        : {
+                            asc: <ArrowDown01 />,
+                            desc: <ArrowDown10 />,
+                            false: null,
+                          }[header.column.getIsSorted().toString()]}
                     </TableHead>
                   );
                 })}
@@ -168,7 +196,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="text-xs md:text-base">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -203,12 +231,12 @@ export function DataTablePagination<TData>({
   table,
 }: DataTablePaginationProps<TData>) {
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="flex-1 text-sm text-muted-foreground">
+    <div className="flex items-center justify-between px-2 text-xs md:text-sm">
+      <div className="hidden text-sm text-muted-foreground">
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex flex-wrap items-center space-x-4 lg:space-x-6">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
           <Select
@@ -221,7 +249,7 @@ export function DataTablePagination<TData>({
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
+              {[10, 25, 50, 100].map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
@@ -229,14 +257,14 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+        <div className="flex items-center justify-center text-sm font-medium">
           Total {table.getRowCount()} rows
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
-        </div>
         <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-center text-sm font-medium">
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
+          </div>
           <Button
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"
