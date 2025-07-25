@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
 import { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter } from "react-router-dom";
 
 import { Toaster } from "@/components/ui/toaster";
-import { QueryClient, QueryClientProvider } from "@/hooks/useCustomQuery";
 
 import "dayjs/locale/ko";
 
