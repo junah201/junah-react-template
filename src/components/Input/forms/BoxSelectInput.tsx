@@ -17,7 +17,7 @@ export const BoxSelectInput = (props: BasicInputProps) => {
     options,
   } = props;
 
-  const handleClick = (optionValue: string) => {
+  const handleClick = (optionValue: any) => {
     if (disabled) return;
 
     const newValue = value === optionValue ? null : optionValue;
@@ -35,7 +35,7 @@ export const BoxSelectInput = (props: BasicInputProps) => {
       <div className="grid grid-cols-2 gap-4 w-full">
         {(options || []).map((option, index) => (
           <div
-            key={option.value + index}
+            key={`${option.value}-${index}`}
             className={`flex items-center justify-center rounded-md w-full p-3 cursor-pointer transition-colors
               ${
                 value === option.value

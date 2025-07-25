@@ -1,29 +1,10 @@
-import React from "react";
 import { useController, Control } from "react-hook-form";
 
 import { BaseInput, TextareaInput, CheckboxInput, SelectInput } from "./forms";
 
-import {
-  InputTypes,
-  Option,
-  FormRules,
-  RegisterTypes,
-  INPUT_TYPES,
-} from "@/constants/form";
+import { InputTypes, INPUT_TYPES, InputBase } from "@/constants/form";
 
-interface BaseInputProps {
-  name: RegisterTypes;
-  label?: string | React.ReactNode | null;
-  type: InputTypes;
-  placeholder?: string;
-  helperText?: string;
-  options?: Option[];
-  disabled?: boolean;
-  inputProps?: any;
-  rules?: FormRules;
-}
-
-export interface BasicInputProps extends BaseInputProps {
+export interface BasicInputProps extends InputBase {
   value: any;
   onChange: (...event: any[]) => void;
   errorMessage?: string | undefined;
@@ -59,7 +40,7 @@ export const BasicInput = (props: BasicInputProps) => {
   return <div className="w-full flex flex-col">{content(type)}</div>;
 };
 
-interface InputProps extends BaseInputProps {
+interface InputProps extends InputBase {
   control: Control<any, any>;
 }
 

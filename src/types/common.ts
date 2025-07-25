@@ -1,14 +1,12 @@
-export interface Datas<TData> {
-  data: TData[];
-  count: number;
+export interface Response<T = any> {
+  code: number;
+  message: string;
+  data: T;
 }
 
-export interface TableBase {
-  id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Message<T = string> {
-  message: T;
+export interface Pagination<T = any> {
+  page: number;
+  size: number;
+  total: number;
+  nodes: T[];
 }
