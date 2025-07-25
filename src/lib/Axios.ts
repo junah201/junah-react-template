@@ -1,76 +1,68 @@
-import axios from "axios";
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { Cookies } from "react-cookie";
 
-import {
-  AxiosInterceptorReqConfig,
-  AuthReqConfig,
-  ReqRejected,
-  AxiosInterceptorRes,
-  AxiosRes,
-  Params,
-  DataForm,
-  AccessToken,
-} from "@/types/axios";
+import { Params, DataForm, AccessToken } from "@/types/axios";
+import { Response } from "@/types/common";
 
 export class Axios {
-  #instance;
-  #auth;
-  #cookie;
-  #accessToekn;
+  private instance;
+  private auth;
+  private cookie;
+  private accessToken;
 
-  constructor(isAuthReq = false, baseURL = "", accessToekn: AccessToken) {
-    this.#instance = axios.create({
+  constructor(isAuthReq = false, baseURL = "", accessToken: AccessToken) {
+    this.instance = axios.create({
       baseURL: `${baseURL}`,
     });
-    this.#auth = isAuthReq;
-    this.#cookie = new Cookies();
-    this.#setInterceptor();
-    this.#accessToekn = accessToekn;
+    this.auth = isAuthReq;
+    this.cookie = new Cookies();
+    this.setInterceptor();
+    this.accessToken = accessToken;
   }
 
   /* Interceptor */
-  #setInterceptor() {
-    this.#instance.interceptors.request.use(
-      this.#reqMiddleWare.bind(this),
-      this.#reqOnError.bind(this)
+  private setInterceptor() {
+    this.instance.interceptors.request.use(
+      this.reqMiddleWare.bind(this),
+      this.reqOnError.bind(this)
     );
-    this.#instance.interceptors.response.use(
-      this.#resMiddleWare.bind(this),
-      this.#resOnError.bind(this)
+    this.instance.interceptors.response.use(
+      this.resMiddleWare.bind(this),
+      this.resOnError.bind(this)
     );
   }
 
   /* Req */
-  #reqMiddleWare(config: AxiosInterceptorReqConfig) {
+  private reqMiddleWare(config: InternalAxiosRequestConfig) {
     let newConfig = config;
-    if (this.#auth) newConfig = this.#setAuthReq(newConfig);
+    if (this.auth) newConfig = this.setAuthReq(newConfig);
 
     return newConfig;
   }
 
-  #setAuthReq(config: AxiosInterceptorReqConfig): AuthReqConfig {
+  setAuthReq(config: InternalAxiosRequestConfig) {
     const { headers } = config;
     const newConfig = {
       ...config,
       headers: {
         ...headers,
-        Authorization: `Bearer ${this.#cookie.get(this.#accessToekn.key)}`,
+        Authorization: `Bearer ${this.cookie.get(this.accessToken.key)}`,
       },
     };
 
-    return newConfig;
+    return newConfig as InternalAxiosRequestConfig;
   }
 
-  #reqOnError(error: ReqRejected) {
+  reqOnError(error: any) {
     return Promise.reject(error);
   }
 
   /* Res */
-  #resMiddleWare(res: AxiosInterceptorRes) {
+  resMiddleWare(res: AxiosResponse<Response>) {
     const { authorization } = res.headers;
 
     if (authorization) {
-      this.#cookie.set(this.#accessToekn.key, authorization, {
+      this.cookie.set(this.accessToken.key, authorization, {
         path: "/",
       });
     }
@@ -78,27 +70,27 @@ export class Axios {
     return res;
   }
 
-  #resOnError(error: AxiosRes) {
+  resOnError(error: any) {
     return Promise.reject(error);
   }
 
   get<DataT = any>(endPoint: string) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "GET",
       url: endPoint,
     });
   }
 
   getByParams<DataT = any>(endPoint: string, params: Params) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "GET",
       url: `${endPoint}`,
       params: params,
     });
   }
 
-  getByParmsAsBlob(endPoint: string, params: Params) {
-    return this.#instance({
+  getByParamsAsBlob(endPoint: string, params: Params) {
+    return this.instance({
       method: "GET",
       url: `${endPoint}`,
       params: params,
@@ -107,7 +99,7 @@ export class Axios {
   }
 
   post<DataT = any>(endPoint: string, data: DataForm) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "POST",
       url: `${endPoint}`,
       data,
@@ -119,7 +111,7 @@ export class Axios {
     data: FormData,
     headers = {}
   ) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "POST",
       url: `${endPoint}`,
       headers: {
@@ -131,7 +123,7 @@ export class Axios {
   }
 
   postFormUnlencoded<DataT = any>(endPoint: string, data: DataForm) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "POST",
       url: `${endPoint}`,
       headers: {
@@ -143,7 +135,7 @@ export class Axios {
   }
 
   put<DataT = any>(endPoint: string, data: object) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "PUT",
       url: endPoint,
       data,
@@ -151,15 +143,15 @@ export class Axios {
   }
 
   patch<DataT = any>(endPoint: string, data: object = {}) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "PATCH",
       url: endPoint,
       data,
     });
   }
 
-  putFormData(endPoint: string, data: DataForm) {
-    return this.#instance({
+  putFormData<DataT = any>(endPoint: string, data: DataForm) {
+    return this.instance<Response<DataT>>({
       method: "PUT",
       url: `${endPoint}`,
       headers: {
@@ -170,7 +162,7 @@ export class Axios {
   }
 
   delete<DataT = any>(endPoint: string) {
-    return this.#instance<DataT>({
+    return this.instance<Response<DataT>>({
       method: "DELETE",
       url: `${endPoint}`,
     });
